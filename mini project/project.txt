@@ -1,0 +1,24 @@
+Deep Learning Based Object Detection And Recognition Framework For The Visually-Impaired
+
+Audio To Sign Language Translator Using Python
+
+Plagiarism-Checker-Using-Nltk
+
+Object Classification Using Cnn-Based Fusion Of Vision And Lidar In Autonomous Vehicle Environment
+
+
+Indian Sign Language Recognition Using Cnn
+
+Crowd Counting Method Based On Cnn
+
+Personalized Travel Planning System
+
+Hospital Management System With Chatbot
+
+Virtual Mouse Operation Using Webcam
+
+Personal Voice Assistant
+
+Design Of  Facial Expression Recognition System Using  Deep Learning Model Based On Human Emotions Through Classification With Cnn Algorithm  And Compare The Probability With Rnn Algorithm
+
+
