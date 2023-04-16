@@ -1,4 +1,4 @@
-import cv2
+import cv2, os
 import numpy as np
 import subprocess
 import pickle
@@ -14,6 +14,7 @@ config.gpu_options.allow_growth = True
 session = tf.compat.v1.Session(config=config)
 set_session(session)
 
+
 def get_char(mask):
     mask = mask[:, :, 0]
     mask = cv2.dilate(mask, KERNEL)
@@ -23,14 +24,32 @@ def get_char(mask):
     x, y, w, h = cv2.boundingRect(contour)
     return mask[y: y+h, x: x+w]
 
+# def predict_char(mask):
+#     mask = cv2.resize(mask, (28,28))
+#     mask = mask / 255.
+#     mask = mask.reshape((1,-1)).astype('float32')
+#     res = model.predict(mask)
+#     for k, v in dict_file.items():
+#         if v == np.argmax(res.astype(int)):
+#             return k
+
+import pandas as pd
+
+DATASET_FILENAME = 'D:\MiniProject\DataSet from Kaggle\A_Z Handwritten Data\A_Z Handwritten Data.csv'
+df = pd.read_csv(DATASET_FILENAME)
+
+# def predict_char(mask):
+#     mask = cv2.resize(mask, (28,28))
+#     mask = mask.reshape((1,-1)).astype('float32')
+#     _, indices = model.kneighbors(mask, n_neighbors=1)
+#     row_idx = indices[0][0]
+#     return dict_file[df.iloc[row_idx, 0]]
+
 def predict_char(mask):
-    mask = cv2.resize(mask, (100, 100))
-    mask = mask / 255.
-    mask = mask.reshape((1, 100, 100, 1)).astype('float32')
-    res = model.predict(mask)[0]
-    for k, v in dict_file.items():
-        if v == np.argmax(res):
-            return k
+    mask = cv2.resize(mask, (28,28))
+    mask = mask.reshape((1,-1)).astype('float32')
+    pred_class = model.predict(mask)
+    return dict_file[pred_class[0]]
 
 def distance(p1, p2):
     return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
@@ -49,10 +68,30 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
 detector = handDetector(maxHands=1, detectionCon=0.5, trackCon=0.5)
 
 KERNEL = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
-model = load_model('model.h5')
-a_file = open("model_loader.pkl", "rb")
-dict_file = pickle.load(a_file)
-a_file.close()
+# model = load_model('D:\\MiniProject\\model.h5')
+# a_file = open("D:\\MiniProject\\model_loader.pkl", "rb")
+# dict_file = pickle.load(a_file)
+
+# print(dict_file)
+# a_file.close()
+dict_file = {}
+for i in range(26):
+    dict_file[i] = chr(ord('a') + i)
+print(dict_file)
+
+# Load the model
+model = None
+
+
+# load the saved KNN model
+# filename = 'knn_model.sav'
+# model = pickle.load(open(filename, 'rb'))
+
+from joblib import dump, load
+filename = 'rfc_model.sav'
+rfc = load(filename)
+    
+
 
 NEXT_C = 0
 NEXT_D = 0
@@ -70,6 +109,17 @@ canvas = None
 random_color = (128, 84, 244)
 
 STRING = ""
+
+
+# continue the sentence when we come after certain duration.
+option = pyautogui.confirm('Select an option', buttons =['1>> Start Fresh', '2>> Continue from the previous Save'])
+if option == '1>> Start Fresh':
+    STRING = ""
+else:
+    if os.path.exists('newfile.txt'):
+        with open('newfile.txt', 'r') as f:
+            STRING = f.read()
+
 
 cam = cv2.VideoCapture(0)
 while True:
@@ -127,18 +177,19 @@ while True:
             cut = get_char(canvas)
             char = predict_char(cut)
 
-            if char == 'back' and len(STRING) > 0:
-                STRING = STRING[:-1]
-            elif char == 'space':
-                if len(STRING) == 0:
-                    continue
-                STRING += ' '
-            else:
-                if CORRECT == 1:
-                    STRING += ' '
-                    CORRECT = 0
-                if char != 'back':
-                    STRING += char
+            # if char == 'back' and len(STRING) > 0:
+            #     STRING = STRING[:-1]
+            # elif char == 'space':
+            #     if len(STRING) == 0:
+            #         continue
+            #     STRING += ' '
+            # else:
+            #     if CORRECT == 1:
+            #         STRING += ' '
+            #         CORRECT = 0
+            #     if char != 'back':
+            if char != None:
+                STRING += char
 
             canvas = np.zeros_like(frame)
             random_color = list(np.random.choice(range(256), size=3))
@@ -147,7 +198,7 @@ while True:
     combined = cv2.addWeighted(np.full_like(frame, random_color), 0.6, frame, 0.4, 0)
     combined = cv2.add(np.uint8(combined * (canvas / 255.)), np.uint8(frame * ((255 - canvas) / 255.)))
 
-    cv2.putText(combined, STRING, (25, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (255, 255, 255), 2)
+    cv2.putText(combined, STRING, (25, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (255, 255, 0), 2)
     cv2.imshow('Virtual Keyboard', combined)
     cv2.imshow('Mask', canvas)
     # if(STRING!=""):print(STRING)
@@ -163,7 +214,7 @@ option = pyautogui.confirm('Select an option', buttons =['1>> Speak', '2>> Save 
 if option == '1>> Speak':
     speak(STRING)
 elif option == '2>> Save in txt file':
-    fileName = "newfile.txt"
+    fileName = "D:\\MiniProject\\newfile.txt"
     with open(fileName, 'w') as f:
         f.write(STRING)
     pyautogui.alert(f'Stored in CWD with filename as {fileName}')
