@@ -11,7 +11,7 @@ import pyautogui
 
 config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
-session = tf.compat.v1.Session(config=config)
+session = tf.compat.v1.Session(config = config)
 set_session(session)
 
 
@@ -45,11 +45,24 @@ df = pd.read_csv(DATASET_FILENAME)
 #     row_idx = indices[0][0]
 #     return dict_file[df.iloc[row_idx, 0]]
 
+# def predict_char(mask):
+#     mask = cv2.resize(mask, (28,28))
+#     mask = mask.reshape((1,-1)).astype('float32')
+#     pred_class = model.predict(mask)
+#     return dict_file[pred_class[0]]
+
+#CNN
 def predict_char(mask):
+    # mask = cv2.imread(mask, cv2.IMREAD_COLOR)
     mask = cv2.resize(mask, (28,28))
-    mask = mask.reshape((1,-1)).astype('float32')
+    # mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+    mask = np.reshape(mask, (-1,28,28,1)).astype(np.float32)
+    mask /= 255.0
+    cv2.imshow('framename', mask)
     pred_class = model.predict(mask)
-    return dict_file[pred_class[0]]
+    
+    return dict_file[np.argmax(pred_class)]
+
 
 def distance(p1, p2):
     return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
@@ -68,7 +81,7 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
 detector = handDetector(maxHands=1, detectionCon=0.5, trackCon=0.5)
 
 KERNEL = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
-# model = load_model('D:\\MiniProject\\model.h5')
+model = load_model('cnn_model.h5')
 # a_file = open("D:\\MiniProject\\model_loader.pkl", "rb")
 # dict_file = pickle.load(a_file)
 
@@ -76,20 +89,22 @@ KERNEL = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
 # a_file.close()
 dict_file = {}
 for i in range(26):
-    dict_file[i] = chr(ord('a') + i)
+    dict_file[i] = chr(ord('A') + i)
+dict_file[26] = 'back'
+dict_file[27] = 'space'
 print(dict_file)
 
 # Load the model
-model = None
+
 
 
 # load the saved KNN model
 # filename = 'knn_model.sav'
 # model = pickle.load(open(filename, 'rb'))
 
-from joblib import dump, load
-filename = 'rfc_model.sav'
-rfc = load(filename)
+# from joblib import dump, load
+# filename = 'rfc_model.sav'
+# rfc = load(filename)
     
 
 
